@@ -1,0 +1,9 @@
+wget http://apache.spinellicreations.com/spark/spark-1.6.0/spark-1.6.0-bin-hadoop2.6.tgz
+tar xvzf spark-1.6.0-bin-hadoop2.6.tgz
+sudo apt-get install openjdk-8-jre-headless
+./bin/run-example SparkPi 10
+sudo -c 'echo 127.0.1.1 $HOST >> /etc/hosts'
+sudo apt-get install python-pip
+sudo apt-get install python-dev
+sudo pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.7.1-cp27-none-linux_x86_64.whl
+spark-1.6.0-bin-hadoop2.6/bin/spark-submit a.py
