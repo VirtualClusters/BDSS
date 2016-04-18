@@ -36,7 +36,7 @@ IMAGES_INDEX_URL = 'http://image-net.org/imagenet_data/urls/imagenet_fall11_urls
 image_batch_size = 3
 # more than 1000 images to parse...
 #
-max_content = 1000L
+max_content = 10000L
 
 def read_file_index():
   from six.moves import urllib
@@ -88,6 +88,7 @@ class NodeLookup(object):
     proto_as_ascii_lines = gfile.GFile(uid_lookup_path).readlines()
     uid_to_human = {}
     p = re.compile(r'[n\d]*[ \S,]*')
+    # n15089472       fat-soluble vitamin
     for line in proto_as_ascii_lines:
       parsed_items = p.findall(line)
       uid = parsed_items[0]
@@ -97,6 +98,10 @@ class NodeLookup(object):
     # Loads mapping from string UID to integer node ID.
     node_id_to_uid = {}
     proto_as_ascii = gfile.GFile(label_lookup_path).readlines()
+    # entry {
+    #   target_class: 878
+    #   target_class_string: "n13044778"
+    # }
     for line in proto_as_ascii:
       if line.startswith('  target_class:'):
         target_class = int(line.split(': ')[1])
@@ -163,6 +168,14 @@ def run_inference_on_image(image):
     predictions = np.squeeze(predictions)
 
     # Creates node ID --> English string lookup.
+    # From:  'imagenet_2012_challenge_label_map_proto.pbtxt'
+    # entry {
+    #  target_class: 384
+    #  target_class_string: "n01514859" 
+    # }
+    # To:  imagenet_synset_to_human_label_map.txt
+    # n01514859       hen
+    # 384 -> n01514859 -> hen
     node_lookup = NodeLookup()
 
     top_k = predictions.argsort()[-num_top_predictions:][::-1]
@@ -211,6 +224,7 @@ label_lookup_path = os.path.join(model_dir, 'imagenet_2012_challenge_label_map_p
 # n00440747	skiing
 #
 uid_lookup_path = os.path.join(model_dir, 'imagenet_synset_to_human_label_map.txt')
+
 def load_lookup():
   """Loads a human readable English name for each softmax node.
 
@@ -256,6 +270,8 @@ def load_lookup():
 
   return node_id_to_name
 
+###############################################################################
+
 node_lookup = load_lookup()
 
 
@@ -263,6 +279,7 @@ master="mesos://192.168.0.70:5050"
 appName="distributed-processing-of-images-using-tensorflow"
 
 conf = SparkConf().setAppName(appName).setMaster(master)
+conf.set("spark.mesos.coarse", "false")
 sc = SparkContext(conf=conf)
 
 node_lookup_bc = sc.broadcast(node_lookup)
@@ -272,6 +289,8 @@ with gfile.FastGFile(model_path, 'rb') as f:
   model_data = f.read()
 
 model_data_bc = sc.broadcast(model_data)
+
+###############################################################################
 
 
 def run_image(sess, img_id, img_url, node_lookup):
@@ -285,8 +304,11 @@ def run_image(sess, img_id, img_url, node_lookup):
     return (img_id, img_url, None)
   scores = []
   softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
-  predictions = sess.run(softmax_tensor,
+  try:
+	  predictions = sess.run(softmax_tensor,
                          {'DecodeJpeg/contents:0': image_data})
+  except tf.errors.InvalidArgumentError:
+    return (img_id, img_url, None)
   predictions = np.squeeze(predictions)
   top_k = predictions.argsort()[-num_top_predictions:][::-1]
   scores = []
