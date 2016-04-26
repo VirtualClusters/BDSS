@@ -327,7 +327,8 @@ def apply_batch(batch):
     #graph_def.ParseFromString(model_data_bc.value)
     graph_def.ParseFromString(model_data)
     tf.import_graph_def(graph_def, name='')
-    with tf.Session() as sess:
+    #with tf.Session() as sess:
+    with tf.Session("grpc://localhost:32773") as sess:
       labelled = [run_image(sess, img_id, img_url, node_lookup) for (img_id, img_url) in batch]
       return [tup for tup in labelled if tup[2] is not None]
 
