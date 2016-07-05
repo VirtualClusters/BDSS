@@ -1,3 +1,9 @@
+# This script is from https://databricks.com/blog/2016/01/25/deep-learning-with-apache-spark-and-tensorflow.html
+
+# Main functions are 
+# - grpc is used
+# based on the instructions here: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/g3doc/how_tos/distributed/index.md
+
 #from pyspark import SparkContext, SparkConf
 import numpy as np
 import tensorflow as tf

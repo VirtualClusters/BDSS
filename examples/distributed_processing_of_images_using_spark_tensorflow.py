@@ -1,3 +1,13 @@
+# This script is from https://databricks.com/blog/2016/01/25/deep-learning-with-apache-spark-and-tensorflow.html
+
+# Main Spark functions used are 
+# - sc.parallelize 
+# - sc.broadcast
+# - collect
+# - flatMap
+
+# Note that a sample mesos master IP address is used i.e. mesos://IP:5050
+
 from pyspark import SparkContext, SparkConf
 import numpy as np
 import tensorflow as tf
